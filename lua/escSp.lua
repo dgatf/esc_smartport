@@ -1,4 +1,4 @@
-local scriptVersion = '0.3.1'
+local scriptVersion = '0.3'
 local tsReadConfig = 0
 local tsSendConfig = 0
 local readConfigState = 0 -- 0-9 stop sensors, 10-15 request config, 16-19 read config, 20-29 restart sensors, 30 ok
@@ -8,7 +8,7 @@ local lcdChange = true
 local scroll = 0
 local config =
    {firmwareVersion = '',
-    protocol = {selected = 4, list = {'HW V3', 'HW V4/V5', 'PWM', 'NONE', ''}, elements = 4},
+    protocol = {selected = 4, list = {'HW V3', 'HW V4/V5', 'PWM', ''}, elements = 3},
     voltage1 = {selected = 3, list = {'Off', 'On', ''}, elements = 2},
     voltage2 = {selected = 3, list = {'Off', 'On', ''}, elements = 2},
     ntc1 = {selected = 3, list = {'Off', 'On', ''}, elements = 2},
