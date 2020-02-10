@@ -3,16 +3,21 @@
  *
  * License https://www.gnu.org/licenses/gpl-3.0.en.html
  *
- * Arduino sketch to send to Frsky SmartPort ESC telemetry and other sensors:
+ * Arduino sketch to send to Frsky SmartPort ESC telemetry:
  *
  * - Hobywing V3
  * - Hobywing V4/V5
  * - RPM PWM signal supported
- * - Additional analog sensors
+ * - Battery voltage with voltage divider
  * - PWM output (for HW V5 Flyfun)
  *
- * Wiring (minimum)
- * ----------------
+ * Adjust RPM sensor in OpenTx:
+ *
+ * - Blades/pair pof poles: number of pair of poles * main gear teeth
+ * - Multiplies: pinion gear teeth
+ *
+ * Wiring
+ * ------
  *
  * - SmartPort Vcc to Arduino RAW
  * - SmartPort Gnd to Arduino Gnd
@@ -23,6 +28,8 @@
  * - If using ESC PWM: ESC PWM signal to Arduino PIN_PWM_ESC (8)
  * - If PWM output is required (for HobbyWing Flyfun V5): Flybarless PWM signal
  * input to Arduino PIN_PWM_OUT (9)
+ * - Voltage divider + to PIN_BATT (A1)
+ * - Voltage divider - to Gnd
  *
  */
 
@@ -30,7 +37,7 @@
 
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 3
-#define VERSION_PATCH 1
+#define VERSION_PATCH 0
 
 // Pins
 
@@ -104,40 +111,110 @@
 // packet 3
 
 // byte 1
-#define BM_AVG_ELEM_RPM(VALUE) VALUE & 0B00001111
-#define BM_AVG_ELEM_VOLT(VALUE) VALUE >> 4 & 0B00001111
+#define BM_QUEUE_RPM(VALUE) VALUE & 0B00001111
+#define BM_QUEUE_VOLT(VALUE) VALUE >> 4 & 0B00001111
 
 // byte 2
-#define BM_AVG_ELEM_CURR(VALUE) VALUE >> 8 & 0B00001111
-#define BM_AVG_ELEM_TEMP(VALUE) VALUE >> 12 & 0B00001111
+#define BM_QUEUE_CURR(VALUE) VALUE >> 8 & 0B00001111
+#define BM_QUEUE_TEMP(VALUE) VALUE >> 12 & 0B00001111
 
 // byte 3
-#define BM_AVG_ELEM_PWM(VALUE) VALUE >> 16 & 0B00001111
+#define BM_QUEUE_PWM(VALUE) VALUE >> 16 & 0B00001111
 
 #define ESCSERIAL_TIMEOUT 3
 #define escSerial Serial
 
 // Debug. Uncommnent for debugging
 // Disconnect Vcc from the RC model to the Arduino
-// Do not connect at the same time Vcc from the model and usb (TTL)
+// Do not connect at the same time Vcc from the model and usb (FTDI)
 // Telemetry may not work properly in debug mode
-// Connect arduino Rx to TTL Tx for flashing, then connect arduino Rx to esc
+// Connect arduino Rx to FTDI Tx for flashing, then connect arduino Rx to esc
 
 //#define DEBUG
 //#define DEBUG_PLOTTER rpm/60
 //#define DEBUG_TELEMETRY
 
+#include "Esc.h"
+#include "Smartport.h"
 #include <Arduino.h>
 #include <EEPROM.h>
 #include <SoftwareSerial.h>
-#include "Esc.h"
-#include "Smartport.h"
 
+template <typename T> class Queue {
+  class Node {
+  public:
+    T item;
+    Node *next;
+    Node() { next = NULL; }
+    ~Node() { next = NULL; }
+  };
+  Node *head;
+  Node *tail;
+
+public:
+  Queue() {
+    head = NULL;
+    tail = NULL;
+  }
+
+  ~Queue() {
+    for (Node *node = head; node != NULL; node = head) {
+      head = node->next;
+      delete node;
+    }
+  }
+
+  bool enqueue(T item) {
+    Node *node = new Node;
+    if (node == NULL)
+      return false;
+    node->item = item;
+    if (head == NULL) {
+      head = node;
+      tail = node;
+      return true;
+    }
+    tail->next = node;
+    tail = node;
+    return true;
+  }
+
+  T dequeue() {
+    if (head == NULL)
+      return T();
+    Node *node = head;
+    head = node->next;
+    T item = node->item;
+    delete node;
+    node = NULL;
+    if (head == NULL)
+      tail = NULL;
+    return item;
+  }
+
+  void initQueue(T item, uint8_t size) {
+    for (uint8_t i = 0; i < size; i++)
+      this->enqueue(item);
+  }
+
+  /*void del() {
+    T item = this->dequeue();
+    while (item != NULL) {
+      item = this->dequeue();
+    }
+  }*/
+
+  void del(uint8_t size) {
+    for (uint8_t i = 0; i < size; i++)
+      this->dequeue();
+  }
+
+};
 
 // Default config
 
 struct Config {
-  uint8_t protocol = PROTOCOL_HW_V3;  // protocol (PROTOCOL_HW_V3=0, PROTOCOL_HW_V4=1, PWM=2, NONE=3)
+  uint8_t protocol = PROTOCOL_HW_V3;  // protocol (PROTOCOL_HW_V3, PROTOCOL_HW_V4, PWM)
   bool voltage1 = false;              // enable/disable voltage1 analog reading
   bool voltage2 = false;              // enable/disable voltage2 analog reading
   bool current = false;               // enable/disable current analog reading
@@ -149,45 +226,52 @@ struct Config {
   uint8_t refreshVolt = 10;           // telemetry voltage refresh rate (ms / 100)
   uint8_t refreshCurr = 10;           // telemetry current refresh rate (ms / 100)
   uint8_t refreshTemp = 10;           // telemetry temperature refresh rate (ms / 100)
-  // max queue size (N) 16 (alpha=2/(N+1))
-  float alphaRpm = 0.3;               // rpm averaging elements
-  float alphaVolt = 0.3;              // voltage averaging elements
-  float alphaCurr = 0.3;              // current averaging elements
-  float alphaTemp = 0.3;              // temperature averaging elements
-  float alphaPwm = 0.3;               // pwm out averaging elements (governor)
+  // max queue size 16
+  uint8_t queueRpm = 5;               // rpm averaging elements
+  uint8_t queueVolt = 5;              // voltage averaging elements
+  uint8_t queueCurr = 5;              // current averaging elements
+  uint8_t queueTemp = 5;              // temperature averaging elements
+  uint8_t queuePwm = 5;               // pwm out averaging elements (governor)
 };
 
 struct Telemetry {
-  uint32_t *escRpmConsP = NULL;
-  uint32_t *escPowerP = NULL;
-  uint32_t *cellP = NULL;
-  uint32_t *temp1P = NULL;
-  uint32_t *temp2P = NULL;
-  uint32_t *voltageAnalog1P = NULL;
-  uint32_t *voltageAnalog2P = NULL;
-  uint32_t *currentAnalogP = NULL;
-  uint32_t *ntc1P = NULL;
-  uint32_t *ntc2P = NULL;
-  float rpm = 0;
-  float voltage = 0;
-  float current = 0;
-  float temp1 = 0;
-  float temp2 = 0;
-  float voltageAnalog1 = 0;
-  float voltageAnalog2 = 0;
-  float currentAnalog = 0;
-  float ntc1 = 0;
-  float ntc2 = 0;
-  float pwm = 0;
-  uint8_t cellCount = 255;
+  float *escRpmConsP = NULL;
+  float *escPowerP = NULL;
+  float *temp1P = NULL;
+  float *temp2P = NULL;
+  float *voltageAnalog1P = NULL;
+  float *voltageAnalog2P = NULL;
+  float *currentAnalogP = NULL;
+  float *ntc1P = NULL;
+  float *ntc2P = NULL;
+  Queue<float> rpmQ;
+  Queue<float> voltageQ;
+  Queue<float> currentQ;
+  Queue<float> temp1Q;
+  Queue<float> temp2Q;
+  Queue<float> voltageAnalog1Q;
+  Queue<float> voltageAnalog2Q;
+  Queue<float> currentAnalogQ;
+  Queue<float> ntc1Q;
+  Queue<float> ntc2Q;
+  Queue<float> pwmQ;
+  float rpmAvg = 0;
+  float voltageAvg = 0;
+  float currentAvg = 0;
+  float temp1Avg = 0;
+  float temp2Avg = 0;
+  float voltageAnalog1Avg = 0;
+  float voltageAnalog2Avg = 0;
+  float currentAnalogAvg = 0;
+  float ntc1Avg = 0;
+  float ntc2Avg = 0;
+  float pwmAvg = 0;
 };
 
 void readConfig();
 void writeConfig();
 void initConfig();
-float calcAlpha(uint8_t elements);
 void setPwmOut();
-uint8_t setCellCount();
 float readVoltageAnalog(uint8_t pin);
 float readNtc(uint8_t pin);
 void setup();
