@@ -110,32 +110,27 @@ float EscHW4Interface::calcCurrHW(uint16_t currentRaw)
     else
         return 0;
 }
-
+ 
 float EscHW4Interface::read(uint8_t index)
 {
-#ifdef SIM_SENSORS
-    value_[ESCHW4_RPM] = 10000;
-    value_[ESCHW4_VOLTAGE] = 24;
-    value_[ESCHW4_CURRENT] = 2;
-    value_[ESCHW4_TEMPFET] = 50;
-    value_[ESCHW4_TEMPBEC] = 30;
-    value_[ESCHW4_CELL_VOLTAGE] = value_[ESCHW4_VOLTAGE] / cellCount_;
     if (index >= 0 && index < 6)
     {
+#ifdef SIM_SENSORS
+        value_[ESCHW4_RPM] = 10000;
+        value_[ESCHW4_VOLTAGE] = 24;
+        value_[ESCHW4_CURRENT] = 2;
+        value_[ESCHW4_TEMPFET] = 50;
+        value_[ESCHW4_TEMPBEC] = 30;
+        value_[ESCHW4_CELL_VOLTAGE] = value_[ESCHW4_VOLTAGE] / cellCount_;
+#else
         update();
+#endif
         if (index == ESCHW4_CELL_VOLTAGE && cellCount_ == 0xFF) {
             if (millis() > 10000)
             {
                 cellCount_ = setCellCount(value_[ESCHW4_VOLTAGE]);
             }  
         }
-        return value_[index];
-    }
-    return 0;
-#endif
-    if (index >= 0 && index < 5)
-    {
-        update();
         return value_[index];
     }
     return 0;
