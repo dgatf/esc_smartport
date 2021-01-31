@@ -2,10 +2,13 @@
 #define CONFIG_H
 
 // Select RX protocol
-#define RX_PROTOCOL RX_SMARTPORT // RX_SMARTPORT, RX_XBUS, RX_SRXL
+#define RX_PROTOCOL RX_EXBUS // RX_SMARTPORT, RX_XBUS, RX_SRXL, RX_EXBUS
 
 // Select SRLX valriant (only for SRXL)
 #define SRXL_VARIANT SRXL_V5 // Only implemented SRXL_V5 (SPEKTRUM)
+
+// Select EX BUS spped
+#define EXBUS_SPEED 125000 // 125000, 250000
 
 // Sensor Id (only smartport)
 #define SENSOR_ID 10

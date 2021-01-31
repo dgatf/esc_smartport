@@ -735,6 +735,11 @@ void setup()
     SMARTPORT_SRXL_SERIAL.setTimeout(SRXLSERIAL_TIMEOUT);
     srxl.begin(SMARTPORT_SRXL_SERIAL);
 #endif
+#if RX_PROTOCOL == RX_EXBUS
+    SMARTPORT_SRXL_SERIAL.begin(EXBUS_SPEED);
+    SMARTPORT_SRXL_SERIAL.setTimeout(EXBUSSERIAL_TIMEOUT);
+    exbus.begin();
+#endif
 #if defined(CONFIG_LUA) && RX_PROTOCOL == RX_SMARTPORT
     Config config = readConfig();
 #else
