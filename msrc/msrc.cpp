@@ -207,7 +207,7 @@ void setup()
 #endif
     if (config.pwmOut)
         pwmOut.enable();
-#if RX_PROTOCOL != RX_XBUS
+#if RX_PROTOCOL != RX_XBUS && RX_PROTOCOL != RX_BST
     Wire.begin();
     Wire.setTimeout(WIRE_TIMEOUT);
 #endif
@@ -233,7 +233,10 @@ void setup()
 #else
     SMARTPORT_SRXL_FRSKY_SERIAL.begin(9600);
 #endif
+#endif
     frsky.begin();
+#if RX_PROTOCOL == RX_BST
+    bst.begin();
 #endif
 }
 
@@ -251,6 +254,9 @@ void loop()
 #endif
 #if RX_PROTOCOL == RX_FRSKYD
     frsky.update();
+#endif
+#if RX_PROTOCOL == RX_BST
+    bst.update();
 #endif
     pwmOut.update();
 }
