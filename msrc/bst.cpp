@@ -48,11 +48,17 @@ void Bst::i2c_request_handler()
         memcpy(buffer, (uint8_t *)&bstGpsPosition, len);
         break;
 #endif
+#if CONFIG_AIRSPEED
+    case BST_I2C_AIRSPEED:
+        len = sizeof(bstAirspeed);
+        memcpy(buffer, (uint8_t *)&bstAirspeed, len);
+        break;
+#endif
     default:
         return;
     }
     buffer[len] = getCrc(buffer, len);
-    Wire.write(buffer, len);
+    Wire.write(buffer, len + 1);
 #ifdef DEBUG
     for (int i = 0; i <= len; i++)
     {
@@ -74,6 +80,9 @@ void Bst::begin()
 #endif
 #if CONFIG_VOLTAGE1 || CONFIG_CURRENT
     addressMask |= BST_I2C_BATTERY;
+#endif
+#if CONFIG_AIRSPEED
+    addressMask |= BST_AIRSPEED;
 #endif
     addressMask = 0xFF;
     Wire.begin(addressMask);
@@ -105,6 +114,10 @@ void Bst::update()
     bstGpsPosition.course = __builtin_bswap16((uint16_t)(*gps.cogP() * 100));
     bstGpsPosition.sat = *gps.satP();
     bstGpsPosition.altitude = __builtin_bswap16((uint16_t)(*gps.altP() + 1000));
+#endif
+#if CONFIG_AIRSPEED
+    airspeed.update();
+    bstAirspeed.airspeed = __builtin_bswap16((uint16_t)(*airspeed.valueP()));
 #endif
 #if defined(SIM_RX)
     static uint32_t timestamp = 0;
