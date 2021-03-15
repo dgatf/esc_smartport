@@ -228,6 +228,9 @@ void setup()
     srxl.begin();
 #endif
 #if RX_PROTOCOL == RX_BST
+#if defined(DEBUG)
+    DEBUG_SERIAL.println("BST");
+#endif
     bst.begin();
 #endif
 }
