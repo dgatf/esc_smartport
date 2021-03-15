@@ -3,9 +3,11 @@
 
 #define BST_I2C_GPS (0xC2 >> 1)
 #define BST_I2C_BATTERY (0xC0 >> 1)
+#define BST_I2C_AIRSPEED (0xC4 >> 1)
 
 #define BST_FRAME_ID_GPS_POSITION 0x02
 #define BST_FRAME_ID_GPS_TIME 0x03
+#define BST_FRAME_ID_AIRSPEED 0x07
 #define BST_FRAME_ID_BATTERY 0x08
 
 #include <Arduino.h>
@@ -44,6 +46,12 @@ struct Bst_Gps_Position
     //uint8_t spare = 0;
 };
 
+struct Bst_Airspeed
+{
+    uint8_t frameId = BST_FRAME_ID_AIRSPEED;
+    uint16_t speed = 0;
+};
+
 class Bst
 {
 private:
@@ -68,6 +76,10 @@ protected:
 #if CONFIG_GPS
     static Bst_Gps_Position bstGpsPosition;
     Bn220 gps = Bn220(GPS_SERIAL);
+#endif
+#if CONFIG_AIRSPEED
+    static Bst_Airspeed bstAirspeed;
+    Pressure airspeed = Pressure(PIN_PRESSURE, 1);
 #endif
 
 private:
