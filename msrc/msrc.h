@@ -36,6 +36,9 @@
 #if RX_PROTOCOL == RX_SRXL
 #include "srxl.h"
 #endif
+#if RX_PROTOCOL == RX_BST
+#include "bst.h"
+#endif
 
 PwmOut pwmOut;
 
@@ -55,6 +58,10 @@ Xbus xbus;
 SoftwareSerial softSerial(PIN_SOFTSERIAL_RX, PIN_SOFTSERIAL_TX);
 #endif
 Srxl srxl(SMARTPORT_SRXL_SERIAL);
+#endif
+
+#if RX_PROTOCOL == RX_BST
+Bst bst;
 #endif
 
 void setup();

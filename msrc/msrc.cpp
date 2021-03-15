@@ -207,7 +207,7 @@ void setup()
 #endif
     if (config.pwmOut)
         pwmOut.enable();
-#if RX_PROTOCOL != RX_XBUS
+#if RX_PROTOCOL != RX_XBUS && RX_PROTOCOL != RX_BST
     Wire.begin();
     Wire.setTimeout(WIRE_TIMEOUT);
 #endif
@@ -227,6 +227,9 @@ void setup()
     SMARTPORT_SRXL_SERIAL.setTimeout(SRXLSERIAL_TIMEOUT);
     srxl.begin();
 #endif
+#if RX_PROTOCOL == RX_BST
+    bst.begin();
+#endif
 }
 
 void loop()
@@ -240,6 +243,9 @@ void loop()
 #if RX_PROTOCOL == RX_SRXL
     srxl.update();
     srxl.checkSerial();
+#endif
+#if RX_PROTOCOL == RX_BST
+    bst.update();
 #endif
     pwmOut.update();
 }
