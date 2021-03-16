@@ -74,9 +74,5 @@ Frsky frsky(SMARTPORT_SRXL_FRSKY_SERIAL);
 Bst bst;
 #endif
 
-#if RX_PROTOCOL == RX_BST
-Bst bst;
-#endif
-
 void setup();
 void loop();
