@@ -79,7 +79,7 @@ protected:
 #endif
 
 private:
-    static uint8_t getByteCrc(uint8_t data);
+    static uint8_t getByteCrc(uint8_t data, uint8_t &crc);
     static uint8_t getCrc(uint8_t *buffer, uint8_t len);
 
 public:

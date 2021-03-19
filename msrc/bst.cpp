@@ -45,9 +45,9 @@ void Bst::sendData()
         if (len > 0)
         {
             buffer[len] = getCrc(buffer, len);
-            Wire.beginTransmission(0); // broadcast
-            Wire.write(buffer, len + 1);
-            Wire.endTransmission();
+            //Wire.beginTransmission(0); // broadcast
+            //Wire.write(buffer, len + 1);
+            //Wire.endTransmission();
             ts = millis();
 #ifdef DEBUG
             for (int i = 0; i <= len; i++)
@@ -104,15 +104,14 @@ uint8_t Bst::getCrc(uint8_t *buffer, uint8_t len)
 {
     uint8_t crc = 0;
     for (uint8_t i = 1; i < len; i++)
-        crc = +getByteCrc(buffer[i]);
+        crc += getByteCrc(buffer[i], crc);
     return crc;
 }
 
-uint8_t Bst::getByteCrc(uint8_t data)
+uint8_t Bst::getByteCrc(uint8_t data, uint8_t &crc)
 {
     bool flag;
     uint8_t polynomial = 0xD5;
-    uint8_t crc;
     for (uint8_t i = 0; i < 8; i++)
     {
         flag = false;
