@@ -133,15 +133,14 @@ uint8_t Bst::getCrc(uint8_t *buffer, uint8_t len)
 {
     uint8_t crc = 0;
     for (uint8_t i = 1; i < len; i++)
-        crc =+ getByteCrc(buffer[i]);
+        crc += getByteCrc(buffer[i], crc);
     return crc;
 }
 
-uint8_t Bst::getByteCrc(uint8_t data)
+uint8_t Bst::getByteCrc(uint8_t data, uint8_t &crc)
 {
     bool flag;
     uint8_t polynomial = 0xD5;
-    uint8_t crc;
     for (uint8_t i = 0; i < 8; i++)
     {
         flag = false;
