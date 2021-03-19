@@ -55,10 +55,6 @@ struct Bst_Airspeed
 class Bst
 {
 private:
-#if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega328PB__) || defined(__AVR_ATmega2560__) || defined(__AVR_ATmega32U4__)
-    uint8_t addressMask = 0;
-#endif
-    static void i2c_request_handler();
 
 protected:
 #ifdef SOFTWARE_SERIAL
@@ -90,6 +86,7 @@ public:
     Bst();
     void begin();
     void update();
+    void sendData();
 };
 
 #endif

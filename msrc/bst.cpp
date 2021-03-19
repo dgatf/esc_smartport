@@ -11,89 +11,67 @@ Bst::Bst()
 {
 }
 
-void Bst::i2c_request_handler()
+void Bst::sendData()
 {
-#ifdef SIM_RX
-    uint8_t list[] = {BST_I2C_BATTERY, BST_I2C_GPS};
+    static uint16_t ts = 0;
     static uint8_t cont = 0;
-    uint8_t address = list[cont];
-    cont++;
-    if (cont > 1)
-        cont = 0;
-#else
-#if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega328PB__) || defined(__AVR_ATmega2560__) || defined(__AVR_ATmega32U4__)
-    uint8_t address = TWDR >> 1;
-#endif
-#if defined(__MKL26Z64__) || defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)
-    uint8_t address = I2C0_D >> 1;
-#endif
-#endif
-#ifdef DEBUG
-    DEBUG_SERIAL.print("I2CA: ");
-    DEBUG_SERIAL.println(address, HEX);
-#endif
-    uint8_t buffer[20] = {0};
-    uint8_t len;
-    switch (address)
+    if (millis() - ts > 1000)
     {
+        Wire.beginTransmission(0); // broadcast
+        uint8_t buffer[20] = {0};
+        uint8_t len = 0;
+        switch (cont)
+        {
+        case 0:
 #if CONFIG_VOLTAGE1 || CONFIG_CURRENT
-    case BST_I2C_BATTERY:
-        len = sizeof(bstBattery);
-        memcpy(buffer, (uint8_t *)&bstBattery, len);
-        break;
+            len = sizeof(bstBattery);
+            memcpy(buffer, (uint8_t *)&bstBattery, len);
 #endif
+            break;
+        case 1:
 #if CONFIG_GPS
-    case BST_I2C_GPS:
-        len = sizeof(bstBattery);
-        memcpy(buffer, (uint8_t *)&bstGpsPosition, len);
-        break;
+            len = sizeof(bstGpsPosition);
+            memcpy(buffer, (uint8_t *)&bstGpsPosition, len);
 #endif
+            break;
+        case 2:
 #if CONFIG_AIRSPEED
-    case BST_I2C_AIRSPEED:
-        len = sizeof(bstAirspeed);
-        memcpy(buffer, (uint8_t *)&bstAirspeed, len);
-        break;
+            len = sizeof(bstAirspeed);
+            memcpy(buffer, (uint8_t *)&bstAirspeed, len);
 #endif
-    default:
-        return;
-    }
-    buffer[len] = getCrc(buffer, len);
-    Wire.write(buffer, len + 1);
+            break;
+        default:
+            break;
+        }
+        if (len > 0)
+        {
+            buffer[len] = getCrc(buffer, len);
+            Wire.write(buffer, len + 1);
+            Wire.endTransmission();
 #ifdef DEBUG
-    for (int i = 0; i <= len; i++)
-    {
-        DEBUG_SERIAL.print(buffer[i], HEX);
-        DEBUG_SERIAL.print(" ");
-    }
-    DEBUG_SERIAL.println();
+            for (int i = 0; i <= len; i++)
+            {
+                DEBUG_SERIAL.print(buffer[i], HEX);
+                DEBUG_SERIAL.print(" ");
+            }
+            DEBUG_SERIAL.println();
 #endif
+        }
+    }
+    ts = millis();
+    cont++;
+    if (cont == 3)
+        cont = 0;
 }
 
 void Bst::begin()
 {
     pinMode(LED_BUILTIN, OUTPUT);
-#if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega328PB__) || defined(__AVR_ATmega2560__) || defined(__AVR_ATmega32U4__)
 #if CONFIG_GPS
-    addressMask |= BST_I2C_GPS;
     GPS_SERIAL.begin(GPS_BAUD_RATE);
     GPS_SERIAL.setTimeout(BN220_TIMEOUT);
 #endif
-#if CONFIG_VOLTAGE1 || CONFIG_CURRENT
-    addressMask |= BST_I2C_BATTERY;
-#endif
-#if CONFIG_AIRSPEED
-    addressMask |= BST_AIRSPEED;
-#endif
-    addressMask = 0xFF;
-    Wire.begin(addressMask);
-    Wire.onRequest(i2c_request_handler);
-    TWAMR = addressMask << 1;
-#endif
-#if defined(__MKL26Z64__) || defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)
-    Wire.begin(BST_AIRSPEED);
-    Wire.onRequest(i2c_request_handler);
-    I2C0_RA = BST_RPM_VOLT_TEMP << 1;
-#endif
+    Wire.begin();
 }
 
 void Bst::update()
@@ -119,21 +97,13 @@ void Bst::update()
     airspeed.update();
     bstAirspeed.airspeed = __builtin_bswap16((uint16_t)(*airspeed.valueP()));
 #endif
-#if defined(SIM_RX)
-    static uint32_t timestamp = 0;
-    if (millis() - timestamp > 94)
-    {
-        i2c_request_handler();
-        timestamp = millis();
-    }
-#endif
 }
 
 uint8_t Bst::getCrc(uint8_t *buffer, uint8_t len)
 {
     uint8_t crc = 0;
     for (uint8_t i = 1; i < len; i++)
-        crc =+ getByteCrc(buffer[i]);
+        crc = +getByteCrc(buffer[i]);
     return crc;
 }
 
