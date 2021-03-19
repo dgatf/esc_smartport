@@ -17,7 +17,6 @@ void Bst::sendData()
     static uint8_t cont = 0;
     if (millis() - ts > 1000)
     {
-        Wire.beginTransmission(0); // broadcast
         uint8_t buffer[20] = {0};
         uint8_t len = 0;
         switch (cont)
@@ -46,8 +45,10 @@ void Bst::sendData()
         if (len > 0)
         {
             buffer[len] = getCrc(buffer, len);
+            Wire.beginTransmission(0); // broadcast
             Wire.write(buffer, len + 1);
             Wire.endTransmission();
+            ts = millis();
 #ifdef DEBUG
             for (int i = 0; i <= len; i++)
             {
@@ -58,7 +59,6 @@ void Bst::sendData()
 #endif
         }
     }
-    ts = millis();
     cont++;
     if (cont == 3)
         cont = 0;
