@@ -8,7 +8,7 @@
 
 
 // Select RX protocol
-#define RX_PROTOCOL RX_FRSKY // RX_SMARTPORT, RX_XBUS, RX_SRXL, RX_FRSKY, RX_BST
+#define RX_PROTOCOL RX_BST // RX_SMARTPORT, RX_XBUS, RX_SRXL, RX_FRSKY, RX_BST
 
 // Select SRLX valriant (only for SRXL)
 #define SRXL_VARIANT SRXL_V5 // Only implemented SRXL_V5 (SPEKTRUM)
@@ -114,7 +114,7 @@
    Connect arduino Rx to TTL Tx for flashing, then if applicabe connect arduino Rx to esc or gps
 */
 
-//#define DEBUG
+#define DEBUG
 //#define DEBUG_ESC
 //#define DEBUG_ESC_RX
 //#define DEBUG_EEPROM_WRITE
