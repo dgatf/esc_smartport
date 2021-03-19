@@ -44,7 +44,7 @@ void Bst::i2c_request_handler()
 #endif
 #if CONFIG_GPS
     case BST_I2C_GPS:
-        len = sizeof(bstBattery);
+        len = sizeof(bstGpsPosition);
         memcpy(buffer, (uint8_t *)&bstGpsPosition, len);
         break;
 #endif
