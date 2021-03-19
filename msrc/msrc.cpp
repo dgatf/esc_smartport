@@ -233,8 +233,8 @@ void setup()
 #else
     SMARTPORT_SRXL_FRSKY_SERIAL.begin(9600);
 #endif
-#endif
     frsky.begin();
+#endif
 #if RX_PROTOCOL == RX_BST
 #if defined(DEBUG)
     DEBUG_SERIAL.println("BST");
