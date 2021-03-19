@@ -237,7 +237,7 @@ void setup()
 #endif
 #if RX_PROTOCOL == RX_BST
 #if defined(DEBUG)
-    DEBUG_SERIAL.println("BST");
+    DEBUG_SERIAL.println("BST MASTER");
 #endif
     bst.begin();
 #endif

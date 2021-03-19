@@ -15,7 +15,7 @@ void Bst::sendData()
 {
     static uint16_t ts = 0;
     static uint8_t cont = 0;
-    if (millis() - ts > 1000)
+    if ((uint16_t)millis() - ts > 1000)
     {
         uint8_t buffer[20] = {0};
         uint8_t len = 0;
@@ -58,10 +58,10 @@ void Bst::sendData()
             DEBUG_SERIAL.println();
 #endif
         }
+        cont++;
+        if (cont == 3)
+            cont = 0;
     }
-    cont++;
-    if (cont == 3)
-        cont = 0;
 }
 
 void Bst::begin()
@@ -97,6 +97,7 @@ void Bst::update()
     airspeed.update();
     bstAirspeed.airspeed = __builtin_bswap16((uint16_t)(*airspeed.valueP()));
 #endif
+    sendData();
 }
 
 uint8_t Bst::getCrc(uint8_t *buffer, uint8_t len)
