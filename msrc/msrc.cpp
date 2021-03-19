@@ -227,14 +227,14 @@ void setup()
     SMARTPORT_SRXL_FRSKY_SERIAL.setTimeout(SRXLSERIAL_TIMEOUT);
     srxl.begin();
 #endif
-#if RX_PROTOCOL == RX_FRSKYD
+#if RX_PROTOCOL == RX_FRSKY
 #if defined(__MKL26Z64__) || defined(__MK20DX128__) || defined(__MK20DX256__) || defined(__MK64FX512__) || defined(__MK66FX1M0__)
     SMARTPORT_SRXL_FRSKY_SERIAL.begin(9600, SERIAL_8N1_RXINV_TXINV);
 #else
     SMARTPORT_SRXL_FRSKY_SERIAL.begin(9600);
 #endif
-#endif
     frsky.begin();
+#endif
 #if RX_PROTOCOL == RX_BST
 #if defined(DEBUG)
     DEBUG_SERIAL.println("BST");
@@ -255,7 +255,7 @@ void loop()
     srxl.update();
     srxl.checkSerial();
 #endif
-#if RX_PROTOCOL == RX_FRSKYD
+#if RX_PROTOCOL == RX_FRSKY
     frsky.update();
 #endif
 #if RX_PROTOCOL == RX_BST
