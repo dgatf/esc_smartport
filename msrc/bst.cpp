@@ -45,9 +45,9 @@ void Bst::sendData()
         if (len > 0)
         {
             buffer[len] = getCrc(buffer, len);
-            //Wire.beginTransmission(0); // broadcast
-            //Wire.write(buffer, len + 1);
-            //Wire.endTransmission();
+            Wire.beginTransmission(0); // broadcast
+            Wire.write(buffer, len + 1);
+            Wire.endTransmission();
             ts = millis();
 #ifdef DEBUG
             for (int i = 0; i <= len; i++)
@@ -72,6 +72,7 @@ void Bst::begin()
     GPS_SERIAL.setTimeout(BN220_TIMEOUT);
 #endif
     Wire.begin();
+    Wire.setWireTimeout(1000);
 }
 
 void Bst::update()
