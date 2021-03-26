@@ -72,6 +72,7 @@ void Bst::begin()
     GPS_SERIAL.setTimeout(BN220_TIMEOUT);
 #endif
     Wire.begin();
+    Wire.setClock(100000);
     Wire.setWireTimeout(1000);
 }
 
