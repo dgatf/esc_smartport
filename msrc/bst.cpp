@@ -46,15 +46,17 @@ void Bst::sendData()
         {
             buffer[len] = getCrc(buffer, len);
             Wire.beginTransmission(0); // broadcast
-            Wire.write(buffer, len + 1);
+            for (uint8_t i = 0; i <= len; i++) {
+                Wire.write(buffer[i]);
+#ifdef DEBUG
+                DEBUG_SERIAL.print(buffer[i], HEX);
+                DEBUG_SERIAL.print(" ");
+#endif
+            }
+            //Wire.write(buffer, len + 1);
             Wire.endTransmission();
             ts = millis();
 #ifdef DEBUG
-            for (int i = 0; i <= len; i++)
-            {
-                DEBUG_SERIAL.print(buffer[i], HEX);
-                DEBUG_SERIAL.print(" ");
-            }
             DEBUG_SERIAL.println();
 #endif
         }
