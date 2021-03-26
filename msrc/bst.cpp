@@ -106,24 +106,21 @@ uint8_t Bst::getCrc(uint8_t *buffer, uint8_t len)
     uint8_t crc = 0;
     for (uint8_t i = 0; i < len; i++)
         getByteCrc(buffer[i], crc);
-    getByteCrc(0, crc);
     return crc;
 }
 
 void Bst::getByteCrc(uint8_t data, uint8_t &crc)
 {
-    bool flag;
-    uint8_t polynomial = 0xD5;
-    for (uint8_t i = 0; i < 8; i++)
+    crc ^= data;
+    for (int i = 0; i < 8; ++i)
     {
-        flag = false;
         if (crc & 0x80)
-            flag = true;
-        crc <<= 1;
-        if (data & 0x80)
-            crc++;
-        data <<= 1;
-        if (flag == true)
-            crc ^= polynomial;
+        {
+            crc = (crc << 1) ^ 0xD5;
+        }
+        else
+        {
+            crc = crc << 1;
+        }
     }
 }
